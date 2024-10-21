@@ -303,7 +303,7 @@ USB Type-C, 5 В, рекомендуем от 500 мА.
 
    Возьмем для примера подключение через I2C, так как передача данных по нему быстрее, чем на UART и проще, чем на SPI. 
    Чтобы Arduino смогла читать данные через I2C, нужно его подключить, а также прописать порты, через которые Arduino будет передавать сигналы моторчикам.
-Пример скетча с комментариями для проводного подключения с использованием I2C здесь: 	
+Пример скетча с комментариями для проводного подключения с использованием I2C здесь: https://github.com/MIR-LLC/robot_voice_control/blob/main/i2C.ino 	
    
    Также возможно взаимодействие с Bluetooth-модулем, если вы захотите использовать этот вариант, то также нужно будет объявить переменные для выводов платы, к которым подключен драйвер управления двигателями, инциилизровать обмен данными с блютус-модулем. Для работы потребуется указать мак-адрес модуля. Посмотреть его можно с помощью смартфона, например, с использованием BLE-Scanner. Далее разберем скетч для подключения по Bluetooth.
    .
@@ -311,21 +311,24 @@ USB Type-C, 5 В, рекомендуем от 500 мА.
    ```
 #include <SoftwareSerial.h>
 
-const int in1 = 7;             // Пин движения вперёд для колёс с правой стороны
-const int in2 = 6;             // Пин движения назад для колёс с правой стороны (+ШИМ)
-const int in3 = 5;             // Пин движения вперёд для колёс с левой стороны (+ШИМ)
-const int in4 = 4;             // Пин движения назад для колёс с левой стороны
-const int ble_rx = 3;          // Bluetooth module RX pin
-const int ble_tx = 2;          // Bluetooth module TD pin
-const String mac_adress = "
-const int motion_delay = 550;  // Engine running time
+const int in1 = 5;                          // Пин движения вперёд для колёс с правой стороны
+const int in2 = 4;                          // Пин движения назад для колёс с правой стороны (+ШИМ)
+const int in3 = 7;                          // Пин движения вперёд для колёс с левой стороны (+ШИМ)
+const int in4 = 6;                          // Пин движения назад для колёс с левой стороны
+const int ble_rx = 3;                       // Пин RX блютуз модуля
+const int ble_tx = 2;                       // Пин TX блютуз модуля
+const int motion_delay = 330;               // Время работы моторов
+const String mac_address = "DC5475F0F482";  // Блютуз MAC-адрес AI-модуля
 
-SoftwareSerial mySerial(ble_tx, ble_rx);
+SoftwareSerial HM10(ble_tx, ble_rx);
 
 void setup() {
-  // Настройка UART
   Serial.begin(9600);  // Настраиваем Serial для вывода логов
-  mySerial.begin(9600);
+
+  HM10.begin(9600);
+  HM10.println("AT+ROLE1");  // Устанавливаем режим для подключения к серверу
+  delay(2000);
+  HM10.println("AT+CONA" + mac_address);  // Передаем команду подключения к AI-модулю
 
   // Инициализируем пины для управления двигателями как выходы
   pinMode(in1, OUTPUT);
@@ -333,15 +336,16 @@ void setup() {
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
 }
+
    ```
 
   Теперь мы должны прописать процесс считывания информации и распознавания команд.
 
    ```
 void loop() {
-  if (mySerial.available()) {
+  if (HM10.available()) {
     String command = "";
-    command = mySerial.readString();
+    command = HM10.readString();
     Serial.println("DATA RECEIVED:");
     Serial.println(command);
 
@@ -362,7 +366,7 @@ void loop() {
   В данном скетче мы пропишем самые основные команды: вперёд, назад, влево, вправо и стоп.
   
    ```
-   // Движение вперед
+// Движение вперед
 void moveForward() {
   digitalWrite(in1, HIGH);
   digitalWrite(in2, LOW);
@@ -422,20 +426,24 @@ void stopMotors() {
    ```
 #include <SoftwareSerial.h>
 
-const int in1 = 7;             // Пин движения вперёд для колёс с правой стороны
-const int in2 = 6;             // Пин движения назад для колёс с правой стороны (+ШИМ)
-const int in3 = 5;             // Пин движения вперёд для колёс с левой стороны (+ШИМ)
-const int in4 = 4;             // Пин движения назад для колёс с левой стороны
-const int ble_rx = 3;          // Bluetooth module RX pin
-const int ble_tx = 2;          // Bluetooth module TD pin
-const int motion_delay = 550;  // Engine running time
+const int in1 = 5;                          // Пин движения вперёд для колёс с правой стороны
+const int in2 = 4;                          // Пин движения назад для колёс с правой стороны (+ШИМ)
+const int in3 = 7;                          // Пин движения вперёд для колёс с левой стороны (+ШИМ)
+const int in4 = 6;                          // Пин движения назад для колёс с левой стороны
+const int ble_rx = 3;                       // Пин RX блютуз модуля
+const int ble_tx = 2;                       // Пин TX блютуз модуля
+const int motion_delay = 330;               // Время работы моторов
+const String mac_address = "DC5475F0F482";  // Блютуз MAC-адрес AI-модуля
 
-SoftwareSerial mySerial(ble_tx, ble_rx);
+SoftwareSerial HM10(ble_tx, ble_rx);
 
 void setup() {
-  // Настройка UART
   Serial.begin(9600);  // Настраиваем Serial для вывода логов
-  mySerial.begin(9600);
+
+  HM10.begin(9600);
+  HM10.println("AT+ROLE1");  // Устанавливаем режим для подключения к серверу
+  delay(2000);
+  HM10.println("AT+CONA" + mac_address);  // Передаем команду подключения к AI-модулю
 
   // Инициализируем пины для управления двигателями как выходы
   pinMode(in1, OUTPUT);
@@ -445,19 +453,19 @@ void setup() {
 }
 
 void loop() {
-  if (mySerial.available()) {
+  if (HM10.available()) {
     String command = "";
-    command = mySerial.readString();
+    command = HM10.readString();
     Serial.println("DATA RECEIVED:");
     Serial.println(command);
 
-    if (command.indexOf("forward") != -1) {
+    if (command.indexOf("вперед") != -1) {
       moveForward();
-    } else if (command.indexOf("backward") != -1) {
+    } else if (command.indexOf("назад") != -1) {
       moveBack();
-    } else if (command.indexOf("right") != -1) {
+    } else if (command.indexOf("вправо") != -1) {
       moveRight();
-    } else if (command.indexOf("left") != -1) {
+    } else if (command.indexOf("влево") != -1) {
       moveLeft();
     }
   }
